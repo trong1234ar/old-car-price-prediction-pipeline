@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+
+# Data
+/data/
+!data/.gitkeep
+
+# MLflow local artifacts
+mlruns/
+
+# VSCode
+.vscode/
+
+# Airflow
+airflow_logs/
+
+notebooks/
+artifacts/
+reports/
+api_service/
+configs/
+.python-version
