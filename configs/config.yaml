@@ -1,0 +1,19 @@
+TODAY : ""
+
+data:
+  raw: 
+    overview: "./data/raw/overview/data.csv"
+    detail: "./data/raw/detail/data.csv"
+  warehouse: "./data/warehouse/data.csv"
+
+crawler:
+  overview:
+    limit: 10
+    base_url: "https://bonbanh.com"
+    additional_url: "/oto-cu-da-qua-su-dung"
+    swap_page: "/page,"
+
+comparer:
+  id_col: "id"
+  summary: "./data/temp/summary.json"
+
