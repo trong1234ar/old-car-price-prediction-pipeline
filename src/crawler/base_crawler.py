@@ -37,7 +37,7 @@ class BaseGeneralCrawler(ABC):
                 
                 # Add cars from current page
                 for href, price, id in zip(hrefs, prices, ids):
-                    tree_ = get_tree_from_url(href)
+                    tree_ = get_tree_from_url(self.base_url + href)
                     
                     if tree_ is None:
                         print(f"Skipping car {id} with href {href} due to failed page load.")
@@ -59,7 +59,16 @@ class BaseGeneralCrawler(ABC):
                 prices = self._get_prices(tree)
                 ids = self._get_ids(tree)
                 for href, price, id in zip(hrefs, prices, ids):
-                    cars.append(Car(id=id, href=href, price=price))
+                    tree_ = get_tree_from_url(self.base_url + href)
+                    
+                    if tree_ is None:
+                        print(f"Skipping car {id} with href {href} due to failed page load.")
+                        continue
+                    
+                    car = self._get_detailed_info(tree_)
+                    car.update({'id': id, 'href': href, 'price': price, 'crawled_date': date})
+                    
+                    cars.append(Car(**car))
                 print(f"Crawled {len(cars)} cars")
         
         return cars

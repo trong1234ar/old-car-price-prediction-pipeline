@@ -7,7 +7,7 @@ from .car_dao import Car
 
 
 class BonBanhCrawler(BaseGeneralCrawler):
-    def __init__(self, base_url: str = "https://bonbanh.com", additional_url: str ="/ha-noi/oto/", swap_page: str="/page,", limit: int = 100):
+    def __init__(self, base_url: str = "https://bonbanh.com/", additional_url: str ="ha-noi/oto/", swap_page: str="page,", limit: int = 100):
         super().__init__(base_url, additional_url, swap_page, limit)
     
     def _get_hrefs(self, tree) -> List[str]:
@@ -22,6 +22,8 @@ class BonBanhCrawler(BaseGeneralCrawler):
     def _get_prices(self, tree) -> List[int]:
         try:
             prices = tree.xpath("//li[@class='car-item row1']/a/div[@class='cb3']/b/@content") + tree.xpath("//li[@class='car-item row2']/a/div[@class='cb3']/b/@content")
+            for i in range(len(prices)):
+                prices[i] = int(prices[i])
             return prices
         except Exception as e:
             print(f"Error getting prices: {e}")
@@ -51,7 +53,8 @@ class BonBanhCrawler(BaseGeneralCrawler):
             car_info['brand'] = tree.xpath("//span[@itemprop='name']/strong/text()")[0]
             car_info['name_car'] = tree.xpath("//span[@itemprop='name']/strong/text()")[1]
             car_info['pulished_date'] = re.search(r'\d+/\d+/\d+', tree.xpath("//div[@class='notes']/text()")[0].strip()).group()
-            car_info['andress'] = add = tree.xpath("//div[@class='contact-txt']/text()")[4].strip().removeprefix("Địa chỉ: ").strip()
+            car_info['andress'] = tree.xpath("//div[@class='contact-txt']/text()")[4].strip().removeprefix("Địa chỉ: ").strip()
+            print("Got detailed info successfully")
             return car_info
         except Exception as e:
             print(f"Error getting detailed info: {e}")
@@ -71,7 +74,7 @@ def save_to_csv(cars: List[Car], filename: str = "data\\raw_cars.csv"):
         print(f"Created {filename} với {len(df)} rows")
 
 if __name__ == "__main__":
-    crawler = BonBanhCrawler(limit=input("Enter limit (-1 for no limit): "))
+    crawler = BonBanhCrawler(limit=int(input("Enter limit (-1 for no limit): ")))
     cars = crawler.crawl_all_cars()
     # Save to CSV if existed
     save_to_csv(cars)
