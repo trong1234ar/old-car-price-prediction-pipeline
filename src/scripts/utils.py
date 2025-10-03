@@ -1,7 +1,7 @@
 import os
-# import yaml
-from pathlib import Path
 from typing import Dict, Any
+
+from pathlib import Path
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -46,9 +46,5 @@ def get_data_paths():
     }
 
 def cars_to_df(cars):
-    rows = [{"id": c.id, "href": c.href, "price": c.price} for c in cars]
-    df = pd.DataFrame(rows)
-    df["id"] = df["id"].astype(str)
-    df["href"] = df["href"].astype(str)
-    df["price"] = pd.to_numeric(df["price"], errors="coerce")
+    df = pd.DataFrame([car.dict() for car in cars])
     return df

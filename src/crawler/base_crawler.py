@@ -1,57 +1,56 @@
 from abc import ABC, abstractmethod
 from typing import List
+from itertools import count
 
 from .car_dao import Car
 from .utils import get_tree_from_url
 
-
 class BaseGeneralCrawler(ABC):
-    def __init__(self, base_url: str, additional_url: str, swap_page: str, limit: int):
+    def __init__(self, base_url: str, additional_url: str, swap_page: str, limit: int, config):
         self.base_url = base_url
         self.additional_url = additional_url
         self.swap_page = swap_page
         self.limit = limit
+        self.cars: List[Car] = []
+
+        try:
+            self.old_data = pd.read_csv(config['data']['raw'])
+        except:
+            self.old_data = pd.DataFrame()
     
-    def crawl_all_cars(self) -> List[Car]:
+    def crawl_search_page(self) -> List[Car]:
         main_url = self.base_url + self.additional_url
-        cars = []
         current_page = 1
-        
-        # If limit is -1, crawl until no more data is available
-        if self.limit == -1:
-            while True:
-                crawl_url = main_url + self.swap_page + str(current_page)
-                tree = get_tree_from_url(crawl_url)
-                
-                # Get data from current page
-                hrefs = self._get_hrefs(tree)
-                prices = self._get_prices(tree)
-                ids = self._get_ids(tree)
-                
-                # If no data found on this page, stop crawling
-                if not tree or not hrefs or not prices or not ids or len(hrefs) == 0:
-                    print(f"No more data found on page {current_page}. Stopping crawl.")
-                    break
-                
-                # Add cars from current page
-                for href, price, id in zip(hrefs, prices, ids):
-                    cars.append(Car(id=id, href=href, price=price))
-                
-                print(f"Crawled {len(cars)} cars (page {current_page})")
+
+        while True:
+            search_url = main_url + self.swap_page + str(current_page)
+            search_tree = get_tree_from_url(search_url)
+            hrefs = self._get_hrefs(search_tree)
+            prices = self._get_prices(search_tree)
+            ids = self._get_ids(search_tree)
+
+            # Stop only for unlimited mode when no more data
+            if not search_tree or not hrefs or not prices or not ids or len(hrefs) == 0:
+                print(f"No more data found on page {current_page}. Stopping crawl.")
+                break
+
+            for href, price, id in zip(hrefs, prices, ids):
+                if id in self.old_data['id'].values:
+                    self
+                car = {'id': id, 'href': href, 'price': price}
+                cars.append(Car(**car))
+
+            print(f"Crawled {len(cars)} cars")
+
+            if current_page >= self.limit and self.limit != -1:
+                break
+            else:
                 current_page += 1
-        else:
-            # Original behavior: crawl up to specified limit
-            for current_page in range(1, self.limit + 1):
-                crawl_url = main_url + self.swap_page + str(current_page)
-                tree = get_tree_from_url(crawl_url)
-                hrefs = self._get_hrefs(tree)
-                prices = self._get_prices(tree)
-                ids = self._get_ids(tree)
-                for href, price, id in zip(hrefs, prices, ids):
-                    cars.append(Car(id=id, href=href, price=price))
-                print(f"Crawled {len(cars)} cars")
-        
+
         return cars
+
+    def crawl_car_detail():
+        pass
 
     @abstractmethod
     def _get_hrefs(self, tree) -> List[str]:
