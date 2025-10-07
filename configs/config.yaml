@@ -1,0 +1,41 @@
+TODAY : ""
+
+data:
+  raw: "./data/raw/data.csv"
+  warehouse: "./data/warehouse/data.csv"
+
+crawler:
+  overview:
+    limit: 10
+    base_url: "https://bonbanh.com"
+    additional_url: "/ha-noi/oto"
+    swap_page: "/page,"
+
+comparer:
+  id_col: "id"
+  summary: "./data/temp/summary.json"
+
+preprocesser:
+  train: "./data/preprocess/train.csv"
+  test: "./data/preprocess/test.csv"
+  test_size: 0.2
+  random_state: 42
+
+models:
+  model:
+    random_forest: 
+      name: "random_forest"
+    xgboost: 
+      name: "xgboost"
+    adaboost: 
+      name: "adaboost"
+    svm: 
+      name: "svm"
+  artifact:
+    run_id: "./artifacts/run_ids.json"
+    candidate: "./artifacts/candidate.json"
+
+registry:
+  uri: "http://127.0.0.1:8080"
+  experiment_name: "test2"
+  registered_model_name: "Best Model"

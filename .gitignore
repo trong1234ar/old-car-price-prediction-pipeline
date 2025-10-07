@@ -24,5 +24,5 @@ notebooks/
 artifacts/
 reports/
 api_service/
-configs/
+models/
 .python-version
