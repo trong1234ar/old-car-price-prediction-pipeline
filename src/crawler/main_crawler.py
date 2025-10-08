@@ -94,7 +94,9 @@ class BonBanhCrawler(BaseGeneralCrawler):
                 car_info['published_date'] = None
             
             try:
-                car_info['address'] = tree.xpath("//div[@class='contact-txt']/text()")[4].strip().removeprefix("Địa chỉ: ").strip()
+                add = tree.xpath("//div[@class='contact-txt']/text()")
+                address = next((item for item in add if "Địa chỉ:" in item), "").strip().replace("Địa chỉ: ", "")
+                car_info['address'] = address
             except:
                 car_info['address'] = None
             
