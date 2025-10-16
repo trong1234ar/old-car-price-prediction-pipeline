@@ -2,22 +2,21 @@ TODAY : ""
 
 data:
   raw: "./data/raw/data.csv"
-  warehouse: "./data/warehouse/data.csv"
+  warehouse: "./data/warehouse"
+
+log:
+  summary: "./log/summary.json"
 
 crawler:
   overview:
-    limit: 10
+    limit: -1
     base_url: "https://bonbanh.com"
-    additional_url: "/oto-cu-da-qua-su-dung"
+    additional_url: "/ha-noi/oto-cu-da-qua-su-dung"
     swap_page: "/page,"
 
-comparer:
-  id_col: "id"
-  summary: "./data/temp/summary.json"
-
 preprocesser:
-  train: "./data/preprocess/train.csv"
-  test: "./data/preprocess/test.csv"
+  train: "./data/preprocess/train.parquet"
+  test: "./data/preprocess/test.parquet"
   test_size: 0.2
   random_state: 42
 
@@ -37,5 +36,5 @@ models:
 
 registry:
   uri: "http://127.0.0.1:8080"
-  experiment_name: "test2"
+  experiment_name: "test_pyspark"
   registered_model_name: "Best Model"

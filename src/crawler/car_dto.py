@@ -1,12 +1,12 @@
-from pydantic import BaseModel
 from datetime import datetime
+
+from pydantic import BaseModel
+
 
 class Car(BaseModel):
     id: str = None
     href: str = None
-    price: int = None
-    updated_at: datetime = None
-    deleted_at: datetime = None
+    price: str = None
     brand: str = None
     name_car: str = None
     year: int = None
@@ -21,5 +21,7 @@ class Car(BaseModel):
     seats: int = None
     doors: int = None
     transmission: str = None
-    pulished_date: datetime = None
     address: str = None
+    published_date: str = None
+    updated_at: str = None
+    deleted_at: str = None

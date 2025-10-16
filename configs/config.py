@@ -39,6 +39,6 @@ def load_config() -> dict:
         _create_directories_for_paths(config)
         
         if not config['TODAY']:
-            today = dt.now().date()
+            today = dt.now().date().strftime("%Y-%m-%d")
             config['TODAY'] = today
         return config

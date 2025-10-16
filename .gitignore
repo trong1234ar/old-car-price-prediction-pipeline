@@ -26,3 +26,5 @@ reports/
 api_service/
 models/
 .python-version
+log/
+mlartifacts/
