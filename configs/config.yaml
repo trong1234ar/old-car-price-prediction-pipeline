@@ -14,27 +14,20 @@ crawler:
     additional_url: "/ha-noi/oto-cu-da-qua-su-dung"
     swap_page: "/page,"
 
-preprocesser:
-  train: "./data/preprocess/train.parquet"
-  test: "./data/preprocess/test.parquet"
-  test_size: 0.2
-  random_state: 42
 
-models:
-  model:
-    random_forest: 
-      name: "random_forest"
-    xgboost: 
-      name: "xgboost"
-    adaboost: 
-      name: "adaboost"
-    svm: 
-      name: "svm"
+ml_pipeline:
+  pipeline_wrapper: "./src/ml_pipeline/pipeline_wrapper.py"
+  ml_pipeline_wrapper: "./src/ml_pipeline/ml_pipeline_wrapper.py"
+  data:
+    train: "./data/model/train"
+    test: "./data/model/test"
+
+registry:
+  uri: "http://127.0.0.1:5000"
+  experiment_name: "test nth"
+  registered_model_name: "Best Model"
+  registered_ml_pipeline_name: "Best ML Pipeline"
+  artifact_name: "ml_pipeline"
   artifact:
     run_id: "./artifacts/run_ids.json"
     candidate: "./artifacts/candidate.json"
-
-registry:
-  uri: "http://127.0.0.1:8080"
-  experiment_name: "test_pyspark"
-  registered_model_name: "Best Model"

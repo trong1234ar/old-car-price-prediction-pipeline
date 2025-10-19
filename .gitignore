@@ -28,3 +28,6 @@ models/
 .python-version
 log/
 mlartifacts/
+temp/
+build/
+old_car_price_prediction.egg-info/

@@ -3,9 +3,12 @@ from typing import Any, Dict, Optional, TypeVar, Generic
 
 from pyspark.sql import DataFrame
 from pyspark.ml.feature import VectorAssembler
-from pyspark.ml.regression import RandomForestRegressor
-from pyspark.sql.functions import col
-
+from pyspark.ml.regression import RandomForestRegressor, GBTRegressor, LinearRegression
+try:
+    from xgboost.spark import SparkXGBRegressor
+    XGB_AVAILABLE = True
+except ImportError:
+    XGB_AVAILABLE = False
 
 ModelType = TypeVar('ModelType')
 
@@ -34,13 +37,13 @@ class BasePredictionPipeline(Generic[ModelType], ABC):
         # Build and train the model
         self.model = self.model.fit(processed_data)
         
-        self.is_fitted = True
+        self.fitted = True
     
     def predict(self, data: DataFrame) -> DataFrame:
         self._infer_column_types(data)
 
-        if not self.is_fitted or self.model is None:
-            raise RuntimeError("Model has not been trained yet. Call fit() first.")
+        # if not self.fitted or self.model is None:
+        #     raise RuntimeError("Model has not been trained yet. Call fit() first.")
             
         # Preprocess the input data
         processed_data = self._preprocess(data)
@@ -66,7 +69,28 @@ class BasePredictionPipeline(Generic[ModelType], ABC):
 
     def _build_model(self):
         models = {
-            "random_forest": RandomForestRegressor(featuresCol='final_feature_vector', labelCol='price'),
+            "random_forest": RandomForestRegressor(
+                featuresCol='final_feature_vector', 
+                labelCol='price'
+            ),
+            "adaboost": GBTRegressor(  # Gradient Boosted Trees as an alternative to AdaBoost
+                featuresCol='final_feature_vector',
+                labelCol='price',
+                maxIter=10,
+                maxDepth=5
+            ),
+            "linear": LinearRegression(  # Using LinearSVR as an alternative to SVR
+                featuresCol='final_feature_vector',
+                labelCol='price',
+                maxIter=100,
+                regParam=0.1,  # Regularization parameter
+                elasticNetParam=0.8  # Mix between L1 and L2 regularization
+            ),
+            "xgboost": SparkXGBRegressor(
+                features_col='final_feature_vector',
+                label_col='price',
+                num_workers=1
+            ),
         }
         return models[self.model_name]
     

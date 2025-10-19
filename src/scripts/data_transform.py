@@ -78,22 +78,26 @@ def transform_data(data):
                     .withColumn("seats", F.col("seats").cast("int")) \
                     .withColumn("doors", F.col("doors").cast("int")) \
                     .withColumn("kilometers", F.col("kilometers").cast("long")) \
-                    .withColumn("price", F.col("price").cast("long")) \
+                    .withColumn("price", F.col("price").cast("long"))
+    transformed_df = transformed_df.dropDuplicates(["id"])
 
     return transformed_df
 
 def split_address_udf():
     """Create a UDF to extract district from address"""
     def split_address(address):
-        districts = ["Ba Đình", "Cầu Giấy", "Đống Đa", "Hai Bà Trưng", 
-                "Hoàn Kiếm", "Thanh Xuân", "Hoàng Mai", "Long Biên", 
-                "Hà Đông", "Tây Hồ", "Nam Từ Liêm", "Bắc Từ Liêm"]
+        districts = ["Hoàng Mai","Đông Anh","Hà Đông","Đống Đa","Sóc Sơn",
+                    "Chương Mỹ","Long Biên","Ba Vì","Hai Bà Trưng","Cầu Giấy",
+                    "Bắc Từ Liêm","Thanh Xuân","Gia Lâm","Thanh Trì","Nam Từ Liêm",
+                    "Thường Tín","Hoài Đức","Mê Linh","Phú Xuyên","Thanh Oai",
+                    "Ba Đình","Thạch Thất","Ứng Hòa","Mỹ Đức","Quốc Oai",
+                    "Phúc Thọ","Đan Phượng","Tây Hồ","Sơn Tây","Hoàn Kiếm"]
 
         if address is None:
             return None
         address = str(address)
         for district in districts:
-            if district in address:
+            if district.lower() in address.lower():
                 return district
         return None
     return F.udf(split_address, StringType())
