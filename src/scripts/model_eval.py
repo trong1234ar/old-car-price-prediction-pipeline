@@ -25,10 +25,8 @@ def run():
     config = load_config()
     spark = SparkSession.builder.getOrCreate()
     ###-----------------------------------------------
-    client = mlflow.MlflowClient()
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
-    mlflow.set_experiment("test_model_train")
-    model_registry_name = "test"
+    client = set_up_mlflow(config)
+    registered_model_name = config["registry"]["registered_ml_pipeline_name"]
     ###-----------------------------------------------
     run_ids = load_json(config["registry"]["artifact"]["run_id"])
 
@@ -39,7 +37,7 @@ def run():
     logger.info("All metrics added to original training runs")
     
     # Find and promote the best model to candidate
-    candidate = find_best_model(client, model_registry_name, all_metrics)
+    candidate = find_best_model(client, registered_model_name, all_metrics)
     
     # Save candidate to json
     save_json(candidate, config["registry"]["artifact"]["candidate"])
@@ -116,7 +114,7 @@ def update_metrics_to_mlflow(all_metrics, logger):
         except Exception as e:
             logger.error(f"Error updating metrics for {name}: {str(e)}")
 
-def find_best_model(client, model_registry_name, all_metrics):
+def find_best_model(client, registered_model_name, all_metrics):
     """Find the best model based on accuracy within 10%."""
     if not all_metrics:
         raise ValueError("No models were successfully evaluated")
@@ -125,7 +123,7 @@ def find_best_model(client, model_registry_name, all_metrics):
         all_metrics.items(),
         key=lambda x: x[1]["metrics"]["mae"]
     ) 
-    best_version = get_model_version_by_run_id(client, model_registry_name, best_model[1]["run_id"])
+    best_version = get_model_version_by_run_id(client, registered_model_name, best_model[1]["run_id"])
     return {
         "model_name": best_model[0],
         "run_id": best_model[1]["run_id"],

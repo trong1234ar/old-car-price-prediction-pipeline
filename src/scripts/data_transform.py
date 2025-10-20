@@ -10,10 +10,11 @@ import pandas as pd
 
 from configs.config import load_config
 from src.logger.logger import get_logger
+from src.scripts.utils import init_spark
 
 
 def run():
-    logger = get_logger("transform", "INFO", "./log/transform.log")
+    logger = get_logger("transform", "INFO", "./log/data_transform.log")
 
     # Initialize Spark
     spark = init_spark()
@@ -33,23 +34,6 @@ def run():
     logger.info(f"Saved to: {output_path}")
 
     spark.stop()
-
-def init_spark():
-    findspark.init()
-    
-    return SparkSession.builder \
-        .master("local[*]") \
-        .appName("CarDataTransformation") \
-        .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
-        .config("spark.sql.execution.pyspark.udf.faulthandler.enabled", "true") \
-        .config("spark.python.worker.faulthandler.enabled", "true") \
-        .config("spark.sql.execution.arrow.pyspark.fallback.enabled", "true") \
-        .config("spark.sql.shuffle.partitions", "8") \
-        .config("spark.driver.memory", "4g") \
-        .config("spark.executor.memory", "4g") \
-        .config("spark.memory.offHeap.enabled", "true") \
-        .config("spark.memory.offHeap.size", "2g") \
-        .getOrCreate()
 
 def get_data(spark, input_path):
     try:
@@ -79,6 +63,12 @@ def transform_data(data):
                     .withColumn("doors", F.col("doors").cast("int")) \
                     .withColumn("kilometers", F.col("kilometers").cast("long")) \
                     .withColumn("price", F.col("price").cast("long"))
+    for column in transformed_df.dtypes:
+        if column[1] == 'string':  # Check if column is of string type
+            transformed_df = transformed_df.withColumn(column[0], 
+                F.when(F.col(column[0]) == "-", F.lit(None))
+                .otherwise(F.col(column[0]))
+            )
     transformed_df = transformed_df.dropDuplicates(["id"])
 
     return transformed_df
@@ -105,3 +95,7 @@ def split_address_udf():
 
 if __name__ == "__main__":
     run()
+
+
+# Dữ liệu chưa clean hết string: 
+# nan, -

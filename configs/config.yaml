@@ -24,10 +24,9 @@ ml_pipeline:
 
 registry:
   uri: "http://127.0.0.1:5000"
-  experiment_name: "test nth"
-  registered_model_name: "Best Model"
-  registered_ml_pipeline_name: "Best ML Pipeline"
-  artifact_name: "ml_pipeline"
+  experiment_name: "test_model_train"
+  registered_ml_pipeline_name: "test"
+  artifact_name: "test"
   artifact:
     run_id: "./artifacts/run_ids.json"
     candidate: "./artifacts/candidate.json"

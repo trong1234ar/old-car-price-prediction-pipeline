@@ -5,7 +5,8 @@ import json
 from pathlib import Path
 import pandas as pd
 import mlflow
-
+import findspark
+from pyspark.sql import SparkSession
 
 # PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # DATA_DIR = PROJECT_ROOT / "data"
@@ -60,7 +61,7 @@ def cars_to_df(cars):
 def get_model_by_version(model_registry_name, version):
     try:
         model_uri = f"models:/{model_registry_name}/{version}"
-        model = load_model(model_uri)
+        model = mlflow.pyfunc.load_model(model_uri)
         return model
     except Exception as e:
         print(f"[get_model_by_version] Error getting model with version: {e}")
@@ -69,7 +70,7 @@ def get_model_by_version(model_registry_name, version):
 def get_model_by_alias(model_registry_name, alias):
     try:
         model_uri = f"models:/{model_registry_name}@{alias}"
-        model = load_model(model_uri)
+        model = mlflow.pyfunc.load_model(model_uri)
         return model
     except Exception as e:
         print(f"[get_model_by_alias] Error getting model with alias: {e}")
@@ -125,3 +126,11 @@ def load_json(file_path):
 def save_json(data, file_path):
     with open(file_path, "w") as f:
         json.dump(data, f, indent=4)
+
+def init_spark():
+    findspark.init()
+    
+    return SparkSession.builder \
+        .master("local") \
+        .appName("CarDataTransformation") \
+        .getOrCreate()

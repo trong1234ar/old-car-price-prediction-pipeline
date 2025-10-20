@@ -13,7 +13,7 @@ from src.logger.logger import get_logger
 def run():
     start = time.time()
     config = load_config()
-    logger = get_logger("Crawler", "INFO", "./log/crawler.log")
+    logger = get_logger("Crawler", "INFO", "./log/data_extract.log")
     # Crawling overview
     crawler_config = config["crawler"]["overview"]
     crawler = BonBanhCrawler(**crawler_config, config=config, logger=logger)

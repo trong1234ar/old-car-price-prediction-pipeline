@@ -9,14 +9,14 @@ import mlflow
 
 from configs.config import load_config
 from src.logger.logger import get_logger
-from src.scripts.utils import set_up_mlflow
+from src.scripts.utils import set_up_mlflow, init_spark
 
 
 def run():
-    logger = get_logger("ml_pipeline", "INFO", "./log/train_model.log")
+    logger = get_logger("ml_pipeline", "INFO", "./log/model_build.log")
     config = load_config()
     spark = init_spark()
-    # set_up_mlflow(config)
+    client = set_up_mlflow(config)
     models_to_test = {"random_forest": "./src/wrapper/rf_wrapper.py",
                     # "xgboost": "./src/wrapper/xgb_wrapper.py",
                     "adaboost": "./src/wrapper/adaboost_wrapper.py",
@@ -26,9 +26,10 @@ def run():
 
     # Initialize Spark for data loading
     data = spark.read.parquet(config["data"]["warehouse"])
-    sample_data = data.limit(10).toPandas()
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
-    mlflow.set_experiment("test_model_train")
+    train, test = data.randomSplit([0.8, 0.2], seed=42)
+    train.write.mode("overwrite").parquet(config["data"]["train"])
+    test.write.mode("overwrite").parquet(config["data"]["test"])
+    # sample_data = data.limit(10).toPandas()
 
 
     for model_name, model_path in models_to_test.items():
@@ -52,17 +53,6 @@ def run():
         json.dump(run_ids, f)
     logger.info(f"[save_run_ids] Run IDs saved to {config['registry']['artifact']['run_id']}")
 
-def init_spark():
-    findspark.init()
-    spark = SparkSession.builder \
-        .master("local") \
-        .appName("CarPricePredictionPipeline") \
-        .getOrCreate()
-    return spark
-
-def set_up_mlflow(config):
-    mlflow.set_tracking_uri(config["registry"]["uri"])
-    mlflow.set_experiment(config["registry"]["experiment_name"])
 
 if __name__ == "__main__":
     run()
