@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Union
 
+from numpy.testing._private.utils import print_assert_equal
 from pyspark.sql import DataFrame, functions as F
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import (
@@ -50,18 +51,19 @@ class CarPricePredictionPipeline(BasePredictionPipeline):
     
     def _feature_engineering(self, data: DataFrame) -> DataFrame:
         """Perform feature engineering."""
-        data = data.withColumn("seat_per_km", data["seats"] / (data["kilometers"] + 1)) \
-                    .withColumn("door_per_km", data["doors"] / (data["kilometers"] + 1)) \
-                    .withColumn("seat_x_door", data["seats"] * data["doors"])
+        # data = data.withColumn("seat_per_km", data["seats"] / (data["kilometers"] + 1)) \
+        #             .withColumn("door_per_km", data["doors"] / (data["kilometers"] + 1)) \
+        #             .withColumn("seat_x_door", data["seats"] * data["doors"])
         # data = data.drop("address", "id", "href")
+        # Or explicitly specify numerical columns if you know them
+        numerical_cols = ['kilometers', 'year']
 
-        if not self.fitted:
-            # self.categorical_cols.remove("address")
-            fe_cols = [
-                "seat_per_km", "door_per_km", "seat_x_door",
-            ]
-            self.numeric_cols.extend(fe_cols)
-
+        for exp in range(2, 4):
+            for col in numerical_cols:
+                data = data.withColumn(f'{col}_exp_{exp}', F.pow(F.col(col), F.lit(exp)))
+                if not self.fitted:
+                    self.numeric_cols.append(f'{col}_exp_{exp}')
+        print(f"[feature_engineering] Current numeric columns: {self.numeric_cols}")
         return data
     
     def _scale_features(self, data: DataFrame, scaler_pip=None) -> tuple[DataFrame, Any]:
