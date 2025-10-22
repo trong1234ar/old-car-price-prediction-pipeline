@@ -22,6 +22,8 @@ class RandomForestWrapper(PythonModel):
         # Load and prepare data
         self.train = self.spark.read.parquet(self.config["ml_pipeline"]["data"]["train"])
         self.test = self.spark.read.parquet(self.config["ml_pipeline"]["data"]["test"])
+
+        self.train
         # Initialize and train pipeline
         self.pipeline = CarPricePredictionPipeline(
             config=self.config, 
