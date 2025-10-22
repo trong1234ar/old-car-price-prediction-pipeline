@@ -11,23 +11,21 @@ from typing import Dict, Tuple, Optional
 from configs.config import load_config
 from src.scripts.utils import (
     load_json,
-    get_model_by_version,
-    get_model_by_alias,
-    load_data_and_split,
+    get_metrics_by_alias,
     set_up_mlflow
 )
 from src.comparer.model_comparer import ModelComparer
 from src.logger.logger import get_logger
 
-def set_alias(client, model_registry_name, version, alias):
+def set_alias(client, registered_model_name, version, alias):
     client.set_registered_model_alias(
-        name=model_registry_name,
+        name=registered_model_name,
         alias=alias,
         version=version
     )
 
-def remove_alias(client, model_registry_name, alias):
-    client.delete_registered_model_alias(model_registry_name, alias)
+def remove_alias(client, registered_model_name, alias):
+    client.delete_registered_model_alias(registered_model_name, alias)
 
 def get_model_by_run_id(artifact_name, run_id):
     logged_pipeline = f'runs:/{run_id}/{artifact_name}'
@@ -47,19 +45,21 @@ def run():
     set_alias(client, registered_model_name, candidate["version"], "Staging") # 2
     logger.info(f"Set candidate model {candidate['version']} to Staging stage")
    
-    prod_model = get_model_by_alias(registered_model_name, "Production") # 4
-    cand_model = get_model_by_version(registered_model_name, candidate["version"]) # 3
-    logger.info(f"Get candidate model and production model")
+    prod_metrics = get_metrics_by_alias(client, registered_model_name, "Production", logger)
     
-    if not prod_model:
+    if not prod_metrics:
         # If no production model exists, promote candidate to production
         set_alias(client, registered_model_name, candidate["version"], "Production")
         remove_alias(client, registered_model_name, "Staging")
         logger.info(f"[run] No production model found. Candidate model {candidate['version']} has been set to Production stage")
     else:
-        X_test, y_test = load_data_and_split(config["preprocesser"]["test"])
-        comparer = ModelComparer()
-        res = comparer.compare(prod_model, cand_model, X_test, y_test)
+        logger.info(f"Get production metrics")
+        
+        cand_mae = candidate["mae"]
+        cand_r2 = candidate["r2"]
+        prod_mae = prod_metrics["eval_mae"]
+        prod_r2 = prod_metrics["eval_r2"]
+        res = cand_mae < prod_mae and cand_r2 > prod_r2
         if res:
             remove_alias(client, registered_model_name, "Production")
             set_alias(client, registered_model_name, candidate["version"], "Production")

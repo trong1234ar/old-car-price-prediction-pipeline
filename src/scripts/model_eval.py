@@ -99,7 +99,7 @@ def calculate_comprehensive_metrics(predictions):
         "accuracy_within_5_percent": float(np.mean(np.abs((y_true - y_pred) / y_true) <= 0.05)),
         "accuracy_within_10_percent": float(np.mean(np.abs((y_true - y_pred) / y_true) <= 0.1))
     })
-
+    
     return metrics
 
 

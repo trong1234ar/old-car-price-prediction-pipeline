@@ -87,6 +87,7 @@ def get_model_version_by_run_id(client, model_registry_name, run_id):
     return model_version
 
 def get_model_version_by_alias(client, model_registry_name, alias):
+
     model_versions = client.search_model_versions(f"name='{model_registry_name}'")
     model_version = None
     
@@ -96,12 +97,16 @@ def get_model_version_by_alias(client, model_registry_name, alias):
             break
     return model_version
 
-def get_metrics_by_alias(client, model_registry_name, alias):
-    mv = get_model_version_by_alias(client, model_registry_name, alias)
-    run_id = mv.run_id
-    run = client.get_run(run_id)
-    metrics = run.data.metrics
-    return metrics
+def get_metrics_by_alias(client, model_registry_name, alias, logger):
+    try:
+        mv = get_model_version_by_alias(client, model_registry_name, alias)
+        run_id = mv.run_id
+        run = client.get_run(run_id)
+        metrics = run.data.metrics
+        return metrics
+    except Exception as e:
+        logger.warning(f"[get_metrics_by_alias] Error getting metrics with alias: {e}")
+        return None
 
 def set_up_mlflow(config):
     mlflow.set_tracking_uri(config["registry"]["uri"])

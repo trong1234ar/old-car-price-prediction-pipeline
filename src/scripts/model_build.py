@@ -6,6 +6,8 @@ from pyspark.sql import SparkSession
 from mlflow.models.signature import infer_signature
 import findspark
 import mlflow
+from pyspark.sql.types import StringType
+import pyspark.sql.functions as F
 
 from configs.config import load_config
 from src.logger.logger import get_logger
@@ -26,18 +28,43 @@ def run():
 
     # Initialize Spark for data loading
     data = spark.read.parquet(config["data"]["warehouse"])
-    train, test = data.randomSplit([0.8, 0.2], seed=42)
-    train.write.mode("overwrite").parquet(config["data"]["train"])
-    test.write.mode("overwrite").parquet(config["data"]["test"])
-    # sample_data = data.limit(10).toPandas()
+    train, test = data.randomSplit([0.8, 0.2], seed=38)
+    data = data.withColumn('seats', F.when(F.col('seats') == 0, 4).otherwise(F.col('seats')))
+    data = data.withColumn('doors', F.when(F.col('doors') == 0, 4).otherwise(F.col('doors')))
 
+    # Apply filters
+    data = data.filter(
+        (F.col('price') < 1e11) & 
+        (F.col('kilometers') < 5e5) & 
+        (F.col('year') >= 2010) & 
+        (F.col('seats') <= 7)
+    )
+
+    col_to_drop = ["id", 'href', 'status', 'address', 'updated_at', 'published_date', 'deleted_at', "district"]
+    for col in col_to_drop:
+        try:
+            train = train.drop(col)
+        except:
+            pass
+        try:
+            test = test.drop(col)
+        except:
+            pass
+
+
+    train = train.withColumn("doors", train["doors"].cast(StringType())) \
+                 .withColumn("seats", train["seats"].cast(StringType()))
+    test = test.withColumn("doors", test["doors"].cast(StringType())) \
+               .withColumn("seats", test["seats"].cast(StringType()))
+    train.write.mode("overwrite").parquet(config['ml_pipeline']["data"]["train"])
+    test.write.mode("overwrite").parquet(config['ml_pipeline']["data"]["test"])
 
     for model_name, model_path in models_to_test.items():
         try:
             with mlflow.start_run(run_name=f"{model_name}_pipeline"):
                 # Then log the fitted model
-                artifact_name="test"
-                registered_model_name="test"
+                artifact_name=config['registry']['artifact_name']
+                registered_model_name=config['registry']['registered_ml_pipeline_name']
                 model_info = mlflow.pyfunc.log_model(
                     python_model=model_path,
                     name=artifact_name,
