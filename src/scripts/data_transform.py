@@ -52,17 +52,15 @@ def transform_data(data):
     # Apply transformations
     transformed_df = data.withColumn("id", F.regexp_replace(F.col('id'), r'[^0-9]', '')) \
                     .withColumn("kilometers", F.regexp_replace(F.col('kilometers'), r'[^0-9]', '')) \
-                    .withColumn("seats", F.regexp_replace(F.col('seats'), r'[^0-9]', '')) \
-                    .withColumn("doors", F.regexp_replace(F.col('doors'), r'[^0-9]', '')) \
                     .withColumn("published_date", F.try_to_timestamp(F.col("published_date"), F.lit("d/MM/yyyy"))) \
                     .withColumn("updated_at", F.try_to_timestamp(F.col("updated_at"))) \
                     .withColumn("deleted_at", F.try_to_timestamp(F.col("deleted_at"))) \
                     .withColumn("district", split_address_func(F.col("address"))) \
-                    .withColumn("year", F.col("year").cast("int")) \
-                    .withColumn("seats", F.col("seats").cast("int")) \
-                    .withColumn("doors", F.col("doors").cast("int")) \
-                    .withColumn("kilometers", F.col("kilometers").cast("long")) \
-                    .withColumn("price", F.col("price").cast("long"))
+                    .withColumn("year", F.col("year").try_cast("int")) \
+                    .withColumn("seats", F.floor(F.col('seats').try_cast("double")).try_cast("int")) \
+                    .withColumn("doors", F.floor(F.col('doors').try_cast("double")).try_cast("int")) \
+                    .withColumn("kilometers", F.col("kilometers").try_cast("long")) \
+                    .withColumn("price", F.col("price").try_cast("long"))
     for column in transformed_df.dtypes:
         if column[1] == 'string':  # Check if column is of string type
             transformed_df = transformed_df.withColumn(column[0], 
@@ -96,6 +94,4 @@ def split_address_udf():
 if __name__ == "__main__":
     run()
 
-
-# Dữ liệu chưa clean hết string: 
-# nan, -
+# fix transform seats doors - chua check
