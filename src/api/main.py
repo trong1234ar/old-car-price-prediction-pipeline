@@ -1,5 +1,6 @@
 import mlflow
 from fastapi import FastAPI
+from pyspark.sql.types import StringType
 
 
 from configs.config import load_config
@@ -35,8 +36,13 @@ async def predict(car: Car):
     row = car.model_dump()
     input_df = spark.createDataFrame([row], schema=schema)
     input_df = transform_data(input_df)
-
+    input_df = input_df.withColumn("doors", input_df["doors"].cast(StringType())) \
+                 .withColumn("seats", input_df["seats"].cast(StringType()))
+    # input_df.show()
     pred_df = model.predict(input_df)
+    # pred_df.show()
     value = pred_df.first().prediction
     value = format(int(value), ",")
     return value
+
+# test load model vi null value
