@@ -27,39 +27,42 @@ class BaseGeneralCrawler(ABC):
         main_url = self.base_url + self.additional_url
         current_page = 1
         while True:
-            search_url = main_url + self.swap_page + str(current_page)
-            search_tree = get_tree_from_url(search_url)
+            try:
+                search_url = main_url + self.swap_page + str(current_page)
+                search_tree = get_tree_from_url(search_url)
 
-            for _ in range(3):
-                if search_tree is None:
-                    self.logger.warning(f"Failed to get tree from url: {search_url}. Retry in 20 secs.")
+                for _ in range(3):
+                    if search_tree is None:
+                        self.logger.warning(f"Failed to get tree from url: {search_url}. Retry in 20 secs.")
+                        time.sleep(20)
+                        search_tree = get_tree_from_url(search_url)
+                    else: 
+                        break
+                else:
+                    self.logger.warning(f"Failed to get tree from url: {search_url}.")
                     time.sleep(20)
-                    search_tree = get_tree_from_url(search_url)
-                else: 
+                    continue
+
+                hrefs = self._get_hrefs(search_tree)
+                prices = self._get_prices(search_tree)
+                ids = self._get_ids(search_tree)
+
+                    
+                if search_tree is None or len(hrefs) == 0 or len(prices) == 0 or len(ids) == 0:
+                    self.logger.info(f"No more data found on page {current_page}. Stopping crawl.")
                     break
-            else:
-                self.logger.warning(f"Failed to get tree from url: {search_url}.")
-                time.sleep(20)
-                continue
 
-            hrefs = self._get_hrefs(search_tree)
-            prices = self._get_prices(search_tree)
-            ids = self._get_ids(search_tree)
+                if current_page == 1:
+                    print(search_url)
+                    last_url, last_page = self._get_last_page(search_tree)
 
+                for href, price, id in zip(hrefs, prices, ids):
+                    car = {'id': id, 'href': href, 'price': price}
+                    car['updated_at'] = self.config['TODAY']
+                    self.cars.append(Car(**car))
+            except Exception as e:
+                self.logger.error(f"Failed to crawl search page: {current_page} {e}")
                 
-            if search_tree is None or len(hrefs) == 0 or len(prices) == 0 or len(ids) == 0:
-                self.logger.info(f"No more data found on page {current_page}. Stopping crawl.")
-                break
-
-            if current_page == 1:
-                print(search_url)
-                last_url, last_page = self._get_last_page(search_tree)
-
-            for href, price, id in zip(hrefs, prices, ids):
-                car = {'id': id, 'href': href, 'price': price}
-                car['updated_at'] = self.config['TODAY']
-                self.cars.append(Car(**car))
-
             if len(self.cars) % 100 == 0:
                 self.logger.info(f"Crawled {len(self.cars)} cars")
 
