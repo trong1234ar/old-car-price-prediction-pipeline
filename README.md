@@ -1,177 +1,134 @@
 
-# Old Car Price Prediction
+# Old Car Price Prediction Pipeline
 
-End-to-end ML project scaffold implementing the flow illustrated in the diagram:
+An end-to-end machine learning pipeline for predicting used car prices, featuring automated data collection, model training, evaluation, and deployment.
 
-- Airflow orchestrates ingestion → training → evaluation → model saving
-- Data pipeline (scikit-learn in this scaffold, Spark-ready configs) for preprocessing, training, evaluation
-- MLflow for experiment tracking and model registry
-- FastAPI service for online prediction, loading the latest model from MLflow (with local fallback)
+## 🚀 Key Features
 
-## Project Structure
+- **Automated Data Collection**: Web crawler for collecting car listings
+- **ML Pipeline**: Complete workflow from data preprocessing to model serving
+- **Model Management**: MLflow integration for experiment tracking and model registry
+- **API Service**: FastAPI endpoint for real-time predictions
+- **Orchestration**: Airflow DAGs for scheduling and monitoring
+
+## 🏗️ Project Structure
 
 ```
-old-car-price-prediction/
+old-car-price-prediction-pipeline/
+├── airflow/
+│   └── dags/                  # Airflow DAG definitions
+│       ├── etl_pipeline.py    # ETL workflow
+│       └── model_pipeline.py  # ML model training 
 │
-├── airflow_dags/
-│   └── car_price_pipeline_dag.py
-│
-├── data/
-│   └── .gitkeep
+├── configs/                   # Configuration files
+│   └── config.py              # Main configuration
+│   └── config.yaml            # Airflow configuration
 │
 ├── src/
-│   ├── api_service/
-│   │   ├── __init__.py
-│   │   ├── main.py
-│   │   ├── mlflow_loader.py
-│   │   └── schemas.py
+│   ├── api/                  # FastAPI application
+│   │   ├── main.py           # API endpoints
+│   │   └── utils.py          # API utilities
 │   │
-│   ├── configs/
-│   │   ├── airflow_config.yaml
-│   │   ├── mlflow_config.yaml
-│   │   └── spark_config.yaml
+│   ├── crawler/              # Web crawler components
+│   │   ├── base_crawler.py   # Base crawler class
+│   │   ├── car_dto.py        # Data transfer objects
+│   │   └── main_crawler.py   # Crawler specific for Bonbanh.com
 │   │
-│   ├── data_pipeline/
-│   │   ├── __init__.py
-│   │   ├── evaluate_model.py
-│   │   ├── preprocess.py
-│   │   ├── save_model.py
-│   │   └── train_model.py
+│   ├── ml_pipeline/          # ML pipeline components
+│   │   ├── base_pipeline.py  # Base pipeline class
+│   │   ├── car_prediction_pipeline.py   # Car prediction pipeline class
 │   │
-│   ├── scripts/
-│   │   ├── __init__.py
-│   │   ├── ingest_data.py
-│   │   └── utils.py
-│   │
-│   └── __init__.py
+│   ├── comparer/             # Data and model comparison tools
+│   └── logger/               # Logging configuration
+│   └── scripts/              # Script files running pipeline
 │
-├── artifacts/                  # created at runtime for local model pickle
-├── mlruns/                     # local MLflow backend store (created at runtime)
-├── airflow_logs/               # Airflow logs (created at runtime)
-├── requirements.txt
-└── README.md
+├── data/                     # Raw and processed data
+├── artifacts/                # Saved models and 
 ```
 
-Note: The pipeline is implemented with scikit-learn for simplicity. The `src/configs/spark_config.yaml` is a placeholder so you can switch to PySpark later if desired.
+## 🛠️ Installation
 
-## Quickstart (Windows PowerShell)
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd old-car-price-prediction-pipeline
+   ```
 
-1) Create a virtual environment and install dependencies
+2. **Create and activate virtual environment**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -U pip
-pip install -r requirements.txt
-```
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   or
+   uv pip install -e
+   ```
 
-2) Generate synthetic sample data
+## 🚦 Quick Start
+0. **Run tools**
+  - Airflow
+   ```bash
+   airflow standalone
+   ```
+  - MLflow
+   ```bash
+   mlflow server --host 127.0.0.1 --port 5000 --default-artifact-root ./mlruns
+   ```
+   - FastAPI
+   ```bash
+   uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+1. **Run the ETL pipeline**
+   ```bash
+   python -m src.scripts.data_extract
+   python -m src.scripts.data_transform
+   ```
 
-```powershell
-python -m src.scripts.ingest_data
-```
+2. **Train and evaluate models**
+   ```bash
+   python -m src.scripts.model_build
+   python -m src.scripts.model_eval
+   python -m src.scripts.model_reg
+   ```
 
-3) Train and log a model to MLflow (also writes test split)
+3. **Start the API server**
+   ```bash
+   uvicorn src.api.main:app --reload
+   ```
 
-```powershell
-python -m src.data_pipeline.train_model
-```
+4. **Make predictions**
+   ```bash
+   curl -X POST "http://localhost:8000/predict" \
+        -H "Content-Type: application/json" \
+        -d '{"year": 2019, "mileage": 50000, "brand": "toyota", "model": "camry"}'
+   ```
 
-4) Evaluate the latest registered model from MLflow
+## 📊 Airflow DAGs
 
-```powershell
-python -m src.data_pipeline.evaluate_model
-```
+The project includes two main DAGs:
 
-5) Save the latest model to a local pickle (API will also try MLflow first)
+1. **ETL Pipeline**: Handles data extraction and transformation
+   - Scheduled to run daily
+   - Extracts car listing data from BonBanh
+   - Processes and stores the cleaned data
 
-```powershell
-python -m src.data_pipeline.save_model
-```
+2. **Model Pipeline**: Manages the ML workflow
+   - Trains new models
+   - Evaluates model performance
+   - Registers models in MLflow
+   - Promotes models to production if they meet criteria
 
-6) Run the API service
+## 📈 MLflow Integration
 
-```powershell
-python -m uvicorn src.api_service.main:app --reload --host 0.0.0.0 --port 8000
-```
+Track experiments and manage models using MLflow:
+- View training metrics and parameters
+- Compare model performance
+- Manage model versions and stages
 
-Test a prediction:
 
-```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/predict" -Method Post -Body (@{
-  year=2016; mileage=60000; brand='toyota'; fuel_type='petrol'; transmission='automatic'; owner_count=1
-} | ConvertTo-Json) -ContentType 'application/json'
-```
+## 📧 Contact
 
-Health check:
-
-```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/health" -Method Get
-```
-
-## MLflow UI
-
-This project uses a local `mlruns/` folder as the MLflow backend store by default. To view runs and registered models:
-
-```powershell
-mlflow ui --backend-store-uri mlruns --host 0.0.0.0 --port 5000
-```
-
-Open http://localhost:5000 in your browser.
-
-## Airflow DAG
-
-The DAG `car_price_pipeline_dag` orchestrates the steps: ingest → train → evaluate → save.
-
-Recommended lightweight local setup (PowerShell):
-
-```powershell
-# Ensure the project is on PYTHONPATH so Airflow can import src.*
-$env:PYTHONPATH = "$(Get-Location)"
-
-# Make Airflow read DAGs from the repo folder
-$env:AIRFLOW__CORE__DAGS_FOLDER = "$(Get-Location)\airflow_dags"
-
-# Initialize Airflow metadata DB
-airflow db init
-
-# Create a user (only once)
-airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin
-
-# Start services (run in separate terminals)
-airflow webserver -p 8080
-airflow scheduler
-```
-
-Then open http://localhost:8080, find `car_price_pipeline_dag`, and trigger it.
-
-If you prefer not to run Airflow, you can execute the same steps manually via the module commands shown in Quickstart.
-
-## Configuration
-
-- `src/configs/mlflow_config.yaml`: MLflow `tracking_uri`, `experiment_name`, and `registered_model_name`.
-- `src/configs/airflow_config.yaml`: DAG id, schedule, and start offset.
-- `src/configs/spark_config.yaml`: Placeholder for Spark settings if you switch to PySpark.
-
-## Notes
-
-- The API attempts to load the latest model from MLflow registry first, then falls back to a local pickle saved by `save_model.py`.
-- Generated artifacts:
-  - `mlruns/` for MLflow runs and registry (local store)
-  - `artifacts/model.pkl` for local serving fallback
-  - `data/ingested.csv`, `data/test.csv`
-- You can customize model hyperparameters in `src/data_pipeline/train_model.py`.
-
-## Example JSON for /predict
-
-```json
-{
-  "year": 2016,
-  "mileage": 60000,
-  "brand": "toyota",
-  "fuel_type": "petrol",
-  "transmission": "automatic",
-  "owner_count": 1
-}
-```
-
+mailto: trongntdseb@gmail.com
