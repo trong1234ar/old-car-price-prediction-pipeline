@@ -3,6 +3,8 @@
 
 An end-to-end machine learning pipeline for predicting used car prices, featuring automated data collection, model training, evaluation, and deployment.
 
+![Workflow diagram](flow.png)
+
 ## 🚀 Key Features
 
 - **Automated Data Collection**: Web crawler for collecting car listings
